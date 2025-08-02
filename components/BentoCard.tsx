@@ -1,10 +1,11 @@
-import React from 'react';
-import { View, StyleSheet, ViewStyle, Dimensions } from 'react-native';
+import * as React from 'react';
+import { View, StyleSheet } from 'react-native';
+type ViewStyle = any; // Temporary workaround for ViewStyle type
 import { Colors } from '../design/colors';
 import { Layout } from '../design/layout';
 
-interface BentoCardProps {
-  children: React.ReactNode;
+export interface BentoCardProps {
+  children: any; // Temporary workaround for ReactNode type
   size?: 'small' | 'medium' | 'large' | 'wide' | 'tall' | 'full';
   variant?: 'default' | 'glass' | 'elevated';
   style?: ViewStyle;

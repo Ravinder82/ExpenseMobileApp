@@ -72,7 +72,7 @@ export const VoiceOcrInputScreen: React.FC = () => {
               <TextInput
                 style={styles.input}
                 value={expenseData.amount}
-                onChangeText={(text) => setExpenseData({...expenseData, amount: text})}
+                onChangeText={(text: string) => setExpenseData({...expenseData, amount: text})}
                 keyboardType="numeric"
               />
             </View>
@@ -82,7 +82,7 @@ export const VoiceOcrInputScreen: React.FC = () => {
               <TextInput
                 style={styles.input}
                 value={expenseData.description}
-                onChangeText={(text) => setExpenseData({...expenseData, description: text})}
+                onChangeText={(text: string) => setExpenseData({...expenseData, description: text})}
               />
             </View>
             
@@ -91,7 +91,7 @@ export const VoiceOcrInputScreen: React.FC = () => {
               <TextInput
                 style={styles.input}
                 value={expenseData.date}
-                onChangeText={(text) => setExpenseData({...expenseData, date: text})}
+                onChangeText={(text: string) => setExpenseData({...expenseData, date: text})}
               />
             </View>
             

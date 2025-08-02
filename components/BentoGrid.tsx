@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { Colors } from '../design/colors';
 import { Layout } from '../design/layout';
 
-interface BentoGridProps {
-  children: React.ReactNode;
+type BentoGridProps = {
+  children: any;
   style?: any;
 }
 

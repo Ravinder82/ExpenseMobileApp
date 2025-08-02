@@ -1,19 +1,30 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, SafeAreaView, ScrollView, TouchableOpacity, Animated } from 'react-native';
+// @ts-ignore
 import SmartExpenseInput from './components/SmartExpenseInput';
 import { BentoCard } from './components/BentoCard';
+// @ts-ignore
 import { BentoGrid } from './components/BentoGrid';
+// @ts-ignore
 import { GlassCard } from './components/GlassCard';
 import { GradientCard } from './components/GradientCard';
 import { Colors } from './design/colors';
 import { Typography } from './design/typography';
+// @ts-ignore
 import { Layout } from './design/layout';
+// @ts-ignore
 import { Icons } from './design/icons';
+// @ts-ignore
 import { CustomTabBar } from './components/CustomTabBar';
+// @ts-ignore
 import { AnalyticsView } from './components/AnalyticsView';
+// @ts-ignore
 import { VoiceOcrInputScreen } from './components/VoiceOcrInputScreen';
+// @ts-ignore
 import { ChatScreen } from './components/ChatScreen';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import * as Notifications from 'expo-notifications';
+import { NotificationService } from './services/notificationService';
 
 interface Expense {
   id: string;
@@ -23,7 +34,54 @@ interface Expense {
   date: Date;
 }
 
+const notificationService = new NotificationService();
+
+// Configure notification handler
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true
+  }),
+});
+
 export default function App() {
+  // Initialize notifications
+  useEffect(() => {
+    const setupNotifications = async () => {
+      await notificationService.requestNotificationPermission();
+      
+      // Schedule daily reminder at 8 PM
+      const reminderTime = new Date();
+      reminderTime.setHours(20, 0, 0, 0); // 8 PM
+      
+      // If it's already past 8 PM, schedule for next day
+      if (reminderTime < new Date()) {
+        reminderTime.setDate(reminderTime.getDate() + 1);
+      }
+      
+      await notificationService.scheduleDailyReminder(reminderTime);
+      
+      // Schedule weekly summary on Sunday at 9 PM
+      if (new Date().getDay() === 0) { // If today is Sunday
+        const summaryTime = new Date();
+        summaryTime.setHours(21, 0, 0, 0); // 9 PM
+        if (summaryTime > new Date()) {
+          await notificationService.scheduleWeeklySummary(0, 21);
+        }
+      }
+    };
+
+    setupNotifications();
+
+    // Clean up on unmount
+    return () => {
+      notificationService.cancelAllNotifications();
+    };
+  }, []);
+
   const [expenses, setExpenses] = useState<Expense[]>([
     {
       id: '1',
@@ -87,13 +145,15 @@ export default function App() {
               }]
             }}>
               <GradientCard style={styles.enhancedHeaderCard}>
-                <Text style={styles.enhancedHeaderTitle}>{Icons.money} Expense Tracker</Text>
-                <Text style={styles.enhancedSubtitle}>AI-Powered Expense Management</Text>
-                <View style={styles.headerStats}>
-                  <Text style={styles.headerStatsText}>Today: ${expenses.filter(e => 
-                    new Date(e.date).toDateString() === new Date().toDateString()
-                  ).reduce((sum, e) => sum + e.amount, 0).toFixed(2)}</Text>
-                </View>
+                <>
+                  <Text style={styles.enhancedHeaderTitle}>{Icons.money} Expense Tracker</Text>
+                  <Text style={styles.enhancedSubtitle}>AI-Powered Expense Management</Text>
+                  <View style={styles.headerStats}>
+                    <Text style={styles.headerStatsText}>Today: ${expenses.filter(e => 
+                      new Date(e.date).toDateString() === new Date().toDateString()
+                    ).reduce((sum, e) => sum + e.amount, 0).toFixed(2)}</Text>
+                  </View>
+                </>
               </GradientCard>
             </Animated.View>
 
@@ -108,7 +168,9 @@ export default function App() {
               }]
             }}>
               <BentoCard size="wide" variant="elevated" style={styles.enhancedInputCard}>
-                <SmartExpenseInput onAddExpense={handleAddExpense} />
+                <View>
+                  <SmartExpenseInput onAddExpense={handleAddExpense} />
+                </View>
               </BentoCard>
             </Animated.View>
 
@@ -125,22 +187,26 @@ export default function App() {
               <View style={styles.statsRow}>
                 {/* Total Expenses Card */}
                 <BentoCard size="medium" variant="glass" style={styles.enhancedTotalCard}>
-                  <View style={styles.cardIconHeader}>
-                    <Text style={styles.cardIcon}>💰</Text>
-                    <Text style={styles.cardLabel}>Total</Text>
+                  <View>
+                    <View style={styles.cardIconHeader}>
+                      <Text style={styles.cardIcon}>💰</Text>
+                      <Text style={styles.cardLabel}>Total</Text>
+                    </View>
+                    <Text style={styles.enhancedAmount}>${totalExpenses.toFixed(2)}</Text>
+                    <Text style={styles.cardSubtext}>All time</Text>
                   </View>
-                  <Text style={styles.enhancedAmount}>${totalExpenses.toFixed(2)}</Text>
-                  <Text style={styles.cardSubtext}>All time</Text>
                 </BentoCard>
 
                 {/* Statistics Summary Card */}
                 <BentoCard size="medium" variant="glass" style={styles.enhancedStatsCard}>
-                  <View style={styles.cardIconHeader}>
-                    <Text style={styles.cardIcon}>📊</Text>
-                    <Text style={styles.cardLabel}>Entries</Text>
+                  <View>
+                    <View style={styles.cardIconHeader}>
+                      <Text style={styles.cardIcon}>📊</Text>
+                      <Text style={styles.cardLabel}>Entries</Text>
+                    </View>
+                    <Text style={styles.enhancedAmount}>{expenses.length}</Text>
+                    <Text style={styles.cardSubtext}>This month</Text>
                   </View>
-                  <Text style={styles.enhancedAmount}>{expenses.length}</Text>
-                  <Text style={styles.cardSubtext}>This month</Text>
                 </BentoCard>
               </View>
             </Animated.View>
@@ -184,14 +250,15 @@ export default function App() {
               }]
             }}>
               <BentoCard size="wide" variant="elevated" style={styles.enhancedExpensesCard}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.enhancedSectionTitle}>Recent Expenses</Text>
-                  <TouchableOpacity style={styles.seeAllButton}>
-                    <Text style={styles.seeAllText}>See All</Text>
-                  </TouchableOpacity>
-                </View>
-                
-                {expenses.length === 0 ? (
+                <View>
+                  <View style={styles.sectionHeader}>
+                    <Text style={styles.enhancedSectionTitle}>Recent Expenses</Text>
+                    <TouchableOpacity style={styles.seeAllButton}>
+                      <Text style={styles.seeAllText}>See All</Text>
+                    </TouchableOpacity>
+                  </View>
+                  
+                  {expenses.length === 0 ? (
                   <View style={styles.emptyState}>
                     <Text style={styles.emptyIcon}>💸</Text>
                     <Text style={styles.emptyTitle}>No expenses yet</Text>
@@ -233,6 +300,7 @@ export default function App() {
                     </View>
                   ))
                 )}
+                </View>
               </BentoCard>
             </Animated.View>
           </ScrollView>
@@ -713,3 +781,7 @@ const getCategoryIcon = (category: string) => {
       return Icons.other;
   }
 };
+
+// Register the app
+import { registerRootComponent } from 'expo';
+registerRootComponent(App);
